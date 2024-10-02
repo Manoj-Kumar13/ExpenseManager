@@ -1,4 +1,3 @@
-// src/components/CategoryModal.js
 import React, { useState } from 'react';
 import { Modal, Input, Button } from 'antd';
 import { useDispatch } from 'react-redux';
@@ -46,7 +45,7 @@ const CategoryModal = () => {
           placeholder="Allocation"
           type="number"
           value={allocation}
-          onChange={(e) => setAllocation(e.target.value)}
+          onChange={(e) => setAllocation(+e.target.value)}
         />
       </Modal>
     </div>

@@ -22,7 +22,7 @@ const budgetSlice = createSlice({
       if (category) {
         const transaction = { 
           amount, 
-          note: note || '',  // Store the note along with the transaction
+          note: note || '',
           date: new Date().toLocaleDateString() 
         };
         category.transactions.push(transaction);
@@ -30,8 +30,15 @@ const budgetSlice = createSlice({
         state.totalSpent += amount;
       }
     },
+    updateCategory: (state, action) => {
+      const { categoryId, key, value } = action.payload;
+      const category = state.categories.find((cat) => cat.id === categoryId);
+      if (category) {
+        category[key] = value;
+      }
+    },
   },
 });
 
-export const { setTotalBudget, addCategory, addExpense } = budgetSlice.actions;
+export const { setTotalBudget, addCategory, addExpense, updateCategory } = budgetSlice.actions;
 export default budgetSlice.reducer;
