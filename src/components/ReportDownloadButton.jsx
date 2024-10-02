@@ -33,7 +33,7 @@ const ReportDownloadButton = () => {
     doc.save('expense-report.pdf');
   };
 
-  return <Button onClick={generatePDF}>Download Report</Button>;
+  return <Button type='primary' onClick={generatePDF} style={{marginRight: '20px'}}>Download Report</Button>;
 };
 
 export default ReportDownloadButton;
