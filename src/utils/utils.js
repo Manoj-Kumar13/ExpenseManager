@@ -1,4 +1,3 @@
-// src/AddTransaction.js
 import { supabase } from '../supabaseClient';
 
 export const addTransaction = async (categoryId, amount, note) => {
@@ -36,3 +35,6 @@ export const updateUnallocatedBudget = async (budgetId, newUnallocatedAmount) =>
     if (error) console.error('Error updating unallocated budget:', error);
   };
   
+  export const formatNumber = (num) => {
+    return num % 1 === 0 ? +num.toFixed(0) : +num.toFixed(2);
+  };
