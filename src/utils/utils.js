@@ -1,4 +1,7 @@
 import { supabase } from '../supabaseClient';
+import { store } from '../store';
+import { setBudget, setCategories } from '../store/budgetSlice';
+import { message } from 'antd';
 
 export const addTransaction = async (categoryId, amount, note) => {
   const { data, error } = await supabase
@@ -37,4 +40,53 @@ export const updateUnallocatedBudget = async (budgetId, newUnallocatedAmount) =>
   
   export const formatNumber = (num) => {
     return num % 1 === 0 ? +num.toFixed(0) : +num.toFixed(2);
+  };
+
+  export const fetchBudgetData = async (userId, loading, setLoading) => {
+    if (loading) return;
+
+    setLoading(true);
+
+    try {
+      const { data: budgetData, error: budgetError } = await supabase
+        .from("budgets")
+        .select("*")
+        .eq("user_id", userId);
+
+      if (budgetError) {
+        throw budgetError;
+      }
+
+      if (!budgetData || budgetData.length === 0) {
+        message.warning("No budget data found for the user.");
+        return;
+      }
+
+      if (budgetData.length > 1) {
+        message.error("Multiple budget entries found. Please contact support.");
+        return;
+      }
+
+      const budget = budgetData[0];
+      store.dispatch(
+        setBudget({ budgetId: budget.id, totalBudget: budget.total_budget })
+      );
+
+      const { data: categoryData, error: categoryError } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("budget_id", budget.id);
+
+      if (categoryError) {
+        throw categoryError;
+      }
+
+      if (categoryData) {
+        store.dispatch(setCategories(categoryData));
+      }
+    } catch (error) {
+      message.error(`Error fetching data: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
