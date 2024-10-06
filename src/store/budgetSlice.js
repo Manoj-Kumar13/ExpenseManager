@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
+  budgetId: null,
   totalBudget: 0,
   totalSpent: 0,
   categories: [],
@@ -10,17 +11,24 @@ const budgetSlice = createSlice({
   name: 'budget',
   initialState,
   reducers: {
-    setTotalBudget: (state, action) => {
-      state.totalBudget = action.payload;
+    setBudget: (state, action) => {
+      const { budgetId, totalBudget } = action.payload;
+      state.budgetId = budgetId;
+      state.totalBudget = totalBudget;
+      state.totalSpent = action.payload.totalSpent || 0;
+    },
+    setCategories: (state, action) => {
+      state.categories = action.payload;
     },
     addCategory: (state, action) => {
       state.categories.push({ ...action.payload, transactions: [], spent: 0 });
     },
     addExpense: (state, action) => {
-      const { categoryId, amount, note } = action.payload;
+      const { categoryId, amount, note, id } = action.payload;
       const category = state.categories.find(cat => cat.id === categoryId);
       if (category) {
-        const transaction = { 
+        const transaction = {
+          id, 
           amount, 
           note: note || '',
           date: new Date().toLocaleDateString() 
@@ -37,8 +45,14 @@ const budgetSlice = createSlice({
         category[key] = value;
       }
     },
+    clearBudget: (state) => {
+      state.budgetId = null;
+      state.totalBudget = 0;
+      state.totalSpent = 0;
+      state.categories = [];
+    },
   },
 });
 
-export const { setTotalBudget, addCategory, addExpense, updateCategory } = budgetSlice.actions;
+export const { setBudget, setCategories, addCategory, addExpense, updateCategory, clearBudget } = budgetSlice.actions;
 export default budgetSlice.reducer;

@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Card, Modal, Input, Progress, Row, Col } from 'antd';
+import { Card, Modal, Input, Progress, Row, Col, message } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { setTotalBudget } from '../store/budgetSlice';
+import { setBudget } from '../store/budgetSlice';
+import { supabase } from '../supabaseClient';
 import { formatNumber } from '../utils/utils';
 
 const BudgetCard = () => {
-  const { totalBudget, categories } = useSelector((state) => state.budget);
+  const { totalBudget, categories, budgetId } = useSelector((state) => state.budget);
   const totalSpent = useSelector((state) => state.budget.totalSpent);
-    const totalAllocated = categories.reduce((sum, category) => sum + +category.allocation, 0);
+  const totalAllocated = categories.reduce((sum, category) => sum + +category.allocation, 0);
   const unallocated = totalBudget - totalAllocated;
   const remainingBudget = totalBudget - totalSpent;
   const spentPercentage = totalAllocated ? (totalSpent / totalAllocated) * 100 : 0;
@@ -21,10 +22,45 @@ const BudgetCard = () => {
     setIsModalVisible(true);
   };
 
-  const handleOk = () => {
+  const handleOk = async () => {
     if (budgetInput > 0) {
-      dispatch(setTotalBudget(Number(budgetInput)));
-      setIsModalVisible(false);
+      try {
+        let response;
+
+        if (budgetId) {
+          // If budgetId exists, update the budget
+          response = await supabase
+            .from('budgets')
+            .update({ total_budget: Number(budgetInput) })
+            .eq('id', budgetId);
+        } else {
+          // If budgetId doesn't exist, insert a new budget
+          const userId = JSON.parse(localStorage.getItem('supabaseSession')).user.id
+          response = await supabase
+            .from('budgets')
+            .insert({ total_budget: Number(budgetInput),  user_id: userId })
+            .select();
+        }
+
+        const { data, error } = response;
+
+        if (error) {
+          throw error;
+        }
+
+        if (!budgetId && data && data.length > 0) {
+          dispatch(setBudget({ totalBudget: Number(budgetInput), budgetId: data[0].id }));
+        } else {
+          dispatch(setBudget({ totalBudget: Number(budgetInput), budgetId }));
+        }
+
+        message.success(budgetId ? 'Budget updated successfully!' : 'Budget created successfully!');
+        setIsModalVisible(false);
+      } catch (error) {
+        message.error('Failed to save budget. Please try again.');
+      }
+    } else {
+      message.error('Please enter a valid budget amount.');
     }
   };
 
@@ -133,3 +169,4 @@ const BudgetCard = () => {
 };
 
 export default BudgetCard;
+

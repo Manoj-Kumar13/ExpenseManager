@@ -16,6 +16,7 @@ import AddExpenseModal from "./AddExpenseModal";
 import TransactionModal from "./TransactionModal";
 import { formatNumber } from "../utils/utils";
 import { updateCategory } from "../store/budgetSlice";
+import { supabase } from "../supabaseClient";
 
 const CategoryList = () => {
   const categories = useSelector((state) => state.budget.categories);
@@ -37,29 +38,45 @@ const CategoryList = () => {
     setIsModalVisible(false);
   };
 
-  const handleSave = () => {
-    if (categoryName.trim() === "" || allocationInput < 0) {
-      message.error("Please provide a valid name and allocation amount.");
-      return;
+  const handleSave = async () => {
+    try {
+      if (categoryName.trim() === "" || allocationInput < 0) {
+        message.error("Please provide a valid name and allocation amount.");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("categories")
+        .update({
+          category_name: categoryName,
+          allocated_amount: allocationInput,
+        })
+        .eq("id", selectedCategory.id);
+
+      if (error) {
+        throw error;
+      }
+
+      dispatch(
+        updateCategory({
+          categoryId: selectedCategory.id,
+          key: "name",
+          value: categoryName,
+        })
+      );
+      dispatch(
+        updateCategory({
+          categoryId: selectedCategory.id,
+          key: "allocation",
+          value: +allocationInput,
+        })
+      );
+
+      message.success("Category updated successfully!");
+      setIsModalVisible(false);
+    } catch (error) {
+      message.error("An error occurred while updating the category.");
     }
-
-    dispatch(
-      updateCategory({
-        categoryId: selectedCategory.id,
-        key: "name",
-        value: categoryName,
-      })
-    );
-    dispatch(
-      updateCategory({
-        categoryId: selectedCategory.id,
-        key: "allocation",
-        value: +allocationInput,
-      })
-    );
-
-    message.success("Category updated successfully!");
-    setIsModalVisible(false);
   };
 
   const handleViewTransactions = (category) => {
