@@ -1,24 +1,53 @@
 import React, { useState } from 'react';
-import { Modal, Input, Button } from 'antd';
-import { useDispatch } from 'react-redux';
+import { Modal, Input, Button, message } from 'antd';
+import { useDispatch, useSelector } from 'react-redux';
 import { addCategory } from '../store/budgetSlice';
 import { PlusOutlined } from '@ant-design/icons';
+import { supabase } from '../supabaseClient';
 
 const CategoryModal = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [categoryName, setCategoryName] = useState('');
   const [allocation, setAllocation] = useState(0);
   const dispatch = useDispatch();
+  const { budgetId } = useSelector((state) => state.budget);
 
   const showModal = () => {
     setIsModalVisible(true);
   };
 
-  const handleOk = () => {
-    dispatch(addCategory({ id: Date.now(), name: categoryName, allocation }));
-    setCategoryName('');
-    setAllocation(0);
-    setIsModalVisible(false);
+  const handleOk = async () => {
+    if (!categoryName || allocation <= 0) {
+      message.error('Please enter a valid category name and allocation.');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .insert({
+          category_name: categoryName,
+          allocated_amount: allocation,
+          budget_id: budgetId,
+        })
+        .select();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data && data.length > 0) {
+        const newCategory = { id: data[0].id, name: categoryName, allocation };
+        dispatch(addCategory(newCategory));
+
+        message.success('Category added successfully!');
+        setCategoryName('');
+        setAllocation(0);
+        setIsModalVisible(false);
+      }
+    } catch (error) {
+      message.error('Failed to save category. Please try again.');
+    }
   };
 
   const handleCancel = () => {

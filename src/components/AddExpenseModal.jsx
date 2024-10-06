@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Modal, Input, Button } from "antd";
+import { Modal, Input, Button, message } from "antd";
 import { useDispatch } from "react-redux";
 import { addExpense } from "../store/budgetSlice";
+import { supabase } from "../supabaseClient";
 
 const AddExpenseModal = ({ categoryId }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -13,11 +14,27 @@ const AddExpenseModal = ({ categoryId }) => {
     setIsModalVisible(true);
   };
 
-  const handleOk = () => {
-      dispatch(addExpense({ categoryId, amount: Number(amount), note }));
+  const handleOk = async () => {
+    try {
+      const response = await supabase
+      .from("transactions")
+      .insert({
+        category_id: categoryId,
+        amount: +amount,
+        note: note
+      }).select();
+
+    if (response.error) {
+      throw response.error;
+    }
+
+      dispatch(addExpense({ id : response.data[0].id ,categoryId, amount: Number(amount), note }));
       setAmount(0);
       setNote("");
       setIsModalVisible(false);
+    } catch (error) {
+      message.error(error.message);
+    }
   };
 
   const handleCancel = () => {
